@@ -90,7 +90,7 @@ components:
         unit:
           type: string
           enum:
-            - KWH
+            - KW
           description: |-
             Defines which unit of measure for the numbers for consumption are in. Note that this defines the numbers
             for all of the values supplied in `requested_flexibility`. Can offer more options in the future.
@@ -208,11 +208,17 @@ components:
           required: true
           description: |-
             Contains the planned power values for each time slot.
-        plugged_in_cars:
+        cars_plugged_in:
           type: integer
           minimum: 0
           description: |-
             The number of cars currently available for flexibility.
+          required: true
+        cars_total:
+          type: integer
+          minimum: 0
+          description: |-
+            The total number of cars.
           required: true
     power_interval:
       type: object
