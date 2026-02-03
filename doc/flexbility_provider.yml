@@ -19,41 +19,31 @@ tags:
     description: Marks endpoints that deal with the exchange of flexibility
 paths:
   /flexibility/request:
-    get:
-      tags:
-        - flexibility exchange
-      summary: Endpoint to retrieve flexibility requests
-      description: |-
-        On this endpoint, a Flexibility Provider can retrieve pending flexibility requests by the _Electric Peak Shaver_. The Flexibility Provider shall poll this request periodically.
-      operationId: getFlexibilityRequest
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/flexibility_request'
-        default:
-          description: Unexpected error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/error"
     post:
       tags:
         - flexibility exchange
-      summary: Endpoint to submit flexibility update
+      summary: Endpoint to request control of flexibilities
       description: |-
-        On this endpoint, a Flexibility Provider can submit the currently active flexibility and predicted availaility of flexibility. Futher data consists of the currently plugged in cars.
-      operationId: postFlexibilityResponse
+        On this endpoint, it is possible to give out a request for flexibility usage. When an _Electric Grid Shaver_
+        service calculates consumption changes, that are required to shave a peak, they can use this endpoint to ask
+        for flexible loads to be controlled in a specific way. It is important to note that any request to reduce
+        consumption has to be fulfilled otherwise, so requests should include timeslots where it is possible to induce
+        elevated consumption, to compensate for reduced consumption during other timeslots. The response has to cover
+        the same time range as the request did. Meaning in case of the request covering only half an hour, the response
+        should do the same.
+      operationId: flexibilityRequest
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/flexibility_update'
+              $ref: '#/components/schemas/flexibility_request'
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/flexibility_response'
         '400':
           description: Invalid request
         '422':
@@ -90,12 +80,12 @@ components:
         unit:
           type: string
           enum:
-            - KW
+            - KWH
           description: |-
             Defines which unit of measure for the numbers for consumption are in. Note that this defines the numbers
             for all of the values supplied in `requested_flexibility`. Can offer more options in the future.
           required: true
-          example: KW
+          example: KWH
         interval_unit:
           type: string
           enum:
@@ -161,97 +151,12 @@ components:
           request: -15.6482
         }
       ]
-    flexibility_update:
-      type: object
-      properties:
-        start_date:
-          type: string
-          format: date-time
-          description: |-
-            The start date-time for this update. *It is expected that the given date-time is in UTC!*
-          required: true
-          example: "2025-09-02T03:00:00Z"
-        unit:
-          type: string
-          enum:
-            - KW
-          description: |-
-            Defines which unit of measure for the power values.
-          required: true
-          example: KW
-        interval_unit:
-          type: string
-          enum:
-            - MINUTES
-          description: |-
-            Denotes the unit of time used to calculate the intervals.
-          required: true
-          example: MINUTES
-        interval_time:
-          type: integer
-          minimum: 1
-          maximum: 60
-          description: |-
-            Defines in combination with the field `interval_unit`, how long a value is valid for.
-          example: 15
-          required: true
-        request_identifier:
-          type: string
-          format: uuid
-          required: true
-          description: |-
-            Identifies the request this update is responding to.
-        planned_flexibility:
-          type: array
-          items:
-            $ref: "#/components/schemas/power_interval"
-          required: true
-          description: |-
-            Contains the planned power values for each time slot.
-        veihcles_flex_available:
-          type: integer
-          minimum: 0
-          description: |-
-            The number of vehicles currently available for flexibility.
-          required: true
-        vehicles_total:
-          type: integer
-          minimum: 0
-          description: |-
-            The total number of vehicles currently enrolled, both available for flexibility and not.
-          required: true
-    power_interval:
-      type: object
-      properties:
-        interval:
-          type: string
-          format: date-time
-          description: |-
-            The date-time for this entry in the list.
-          required: true
-        baseline:
-          type: number
-          format: double
-          description: |-
-            The planned power consumption for this interval.
-          required: true
-        min:
-          type: number
-          format: double
-          description: |-
-            The minimum power that can be consumed during this interval.
-          required: true
-        max:
-          type: number
-          format: double
-          description: |-
-            The maximum power that can be consumed during this interval.
-          required: true
-      example:
-        interval: "2025-01-01T00:00:00Z"
-        baseline: 25.0
-        min: 10.0
-        max: 50.0
+    flexibility_response:
+      $ref: '#/components/schemas/flexibility_request'
+      description: |-
+        The response to the `flexibility_request` shares the same requirements. It is important to note, that the
+        response attributes should be identical to the ones from the request, _except_ the `request` fields in the
+        `requested_flexibility`, which would translate to the actual flexibility the provider can offer.
   securitySchemes:
     basicAuth:
       type: http
