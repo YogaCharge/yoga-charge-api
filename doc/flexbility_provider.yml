@@ -44,7 +44,7 @@ paths:
         - flexibility exchange
       summary: Endpoint to submit flexibility update
       description: |-
-        On this endpoint, a Flexibility Provider can submit the currently active flexibility and predicted availbaility of flexibility. Futher data consists of the currently plugged in cars.
+        On this endpoint, a Flexibility Provider can submit the currently active flexibility and predicted availaility of flexibility. Futher data consists of the currently plugged in cars.
       operationId: postFlexibilityResponse
       requestBody:
         content:
@@ -95,7 +95,7 @@ components:
             Defines which unit of measure for the numbers for consumption are in. Note that this defines the numbers
             for all of the values supplied in `requested_flexibility`. Can offer more options in the future.
           required: true
-          example: KWH
+          example: KW
         interval_unit:
           type: string
           enum:
@@ -174,11 +174,11 @@ components:
         unit:
           type: string
           enum:
-            - KWH
+            - KW
           description: |-
             Defines which unit of measure for the power values.
           required: true
-          example: KWH
+          example: KW
         interval_unit:
           type: string
           enum:
@@ -208,17 +208,17 @@ components:
           required: true
           description: |-
             Contains the planned power values for each time slot.
-        cars_plugged_in:
+        veihcles_flex_available:
           type: integer
           minimum: 0
           description: |-
-            The number of cars currently available for flexibility.
+            The number of vehicles currently available for flexibility.
           required: true
-        cars_total:
+        vehicles_total:
           type: integer
           minimum: 0
           description: |-
-            The total number of cars.
+            The total number of vehicles currently enrolled, both available for flexibility and not.
           required: true
     power_interval:
       type: object
