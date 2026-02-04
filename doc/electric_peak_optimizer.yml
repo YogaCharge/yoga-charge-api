@@ -306,25 +306,29 @@ components:
           type: number
           format: double
           description: |-
-            The planned power consumption for this interval. This value can be seen as the normal behavior, which
-            corresponds to no flexibility being used, hence has no influence on the grid forecast.
+            The power consumption that is part of the already existing forecast from the grid provider. Serves as a 
+            comparison point for the forecast.
+        planned:
+          type: number
+          format: double
+          description: |-
+            The planned consumption for this time, already adapted to the flexibility demands.
         min:
           type: number
           format: double
           description: |-
-            The minimum power that can be consumed during this interval. This value symbolizes how much consumption can
-            be decreased, in theory. If the baseline is 30, and the minimum is 10, this means that we can reduce the
-            consumption by 20, but that some cars cannot be stopped from charging. If the value is for example -5, 
-            then that implies that cars will also have their charging reduced, even tho they would like to charge.
+            Defines the absolute minimum we can go down to when it comes to influenced consumption. Meaning that if the
+            planned value is 15, and min is 2, we are able to go down with the consumption by an additional 13 if required.
         max:
           type: number
           format: double
           description: |-
-            The maximum power that can be consumed during this interval. This can be seen as additional consumption above
-            the baseline, that can be triggered.
+            Defines the absolute maximum we can go up to when it comes to influenced consumption. Meaning that if the
+            planned value is 15, and max is 27, we are able to go up with the consumption by an additional 12 if required.
       required:
         - interval
         - baseline
+        - planned
         - min
         - max
       example:
