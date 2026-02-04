@@ -134,6 +134,7 @@ components:
           required: true
           example: KW
         flexibility_influence:
+          type: number
           format: double
           description: |-
             Defines a numeric amount of energy that is currently being controlled via flexibility. A negative value implies
