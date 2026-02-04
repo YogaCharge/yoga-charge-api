@@ -1,1 +1,332 @@
-//TODO has to be discussed and define
+openapi: 3.1.1
+info:
+  title: Electric Grid Optimizer API
+  description: |-
+    This is the API definition for the electric grid optimizer in the YogaCharge research project. This API definition is used
+    in combination with an flexibility providers, which can query this API to retrieve flexibility demands and also offer them.
+  contact:
+    url: https://github.com/YogaCharge/yoga-charge-api
+  version: 0.0.1
+externalDocs:
+  description: Find out more about Swagger
+  url: https://swagger.io
+servers:
+  - url: peakshaver.eigerdata.com/api/v0
+    description: beta branch for ongoing API implementations and discussions
+tags:
+  - name: flexibility exchange
+    description: Marks endpoints that deal with the exchange of flexibility
+  - name: flexibility report
+    description: Marks endpoints that deal with the reporting of actual flexibility usage
+paths:
+  /flexibility/demand:
+    get:
+      tags:
+        - flexibility exchange
+      summary: Endpoint to retrieve flexibility demands
+      operationId: getFlexibilityDemand
+      parameters:
+        - in: query
+          name: interval
+          schema:
+            type: integer
+            minimum: 15
+            maximum: 1440
+            description: |-
+              The interval requested for the flexibility demands. The interval starts "now", and goes on for
+              the defined length of the interval, where as the interval is defined in minutes.
+      description: |-
+        On this endpoint, a Flexibility Provider can retrieve the flexibility demand from the grid, and use it to schedule
+        the consumption of his onboarded fleet.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/flexibility_demand'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error"
+    post:
+      tags:
+        - flexibility exchange
+      summary: Endpoint to submit flexibility plan
+      operationId: postFlexibilityPlan
+      description: |-
+        On this endpoint, a Flexibility Provider can submit his planned flexibility usage. This is taken as "planned"
+        usage, hence not real one, so only used for forecasting flexibility usage.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/flexibility_plan'
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Invalid request
+        '422':
+          description: Validation exception
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error"
+  /flexibility/usage:
+    post:
+      tags:
+        - flexibility report
+      summary: Endpoint to submit current flexibility usage
+      operationId: postFlexibilityUsage
+      description: |-
+        On this endpoint, a Flexibility Provider can submit his current, live data regarding the flexibility he is actively
+        providing. On this endpoint, the reported data implies active action taken on the charging behavior.
+        A positive value corresponds to increased charging, where a negative one corresponds to reduced charging.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/flexibility_usage'
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Invalid request
+        '422':
+          description: Validation exception
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error"
+components:
+  schemas:
+    error:
+      type: object
+      properties:
+        message:
+          type: string
+          description: |-
+            Describes the error at hand. This should be descriptive enough to enable further actions to be taken.
+          required: true
+    flexibility_usage:
+      type: object
+      properties:
+        start_date:
+          type: string
+          format: date-time
+          description: |-
+            UTC normalized start_date, of when the values are being measured.
+          required: true
+          example: "2025-09-02T03:00:00Z"
+        unit:
+          type: string
+          enum:
+            - KW
+          description: |-
+            Defines which unit of measure for the numbers that are submitted.
+          required: true
+          example: KW
+        flexibility_influence:
+          format: double
+          description: |-
+            Defines a numeric amount of energy that is currently being controlled via flexibility. A negative value implies
+            a reduction of consumption, in relation to the baseline, where as a positive value implies additional
+            consumption in relation to the baseline
+          required: true
+          example: 7.5
+        registered_vehicles:
+          type: integer
+          minimum: 0
+          description: |-
+            The number of vehicles registered on the platform of the flexibility provider
+          required: true
+          example: 24
+        plugged_in_vehicles:
+          type: integer
+          minimum: 0
+          description: |-
+            The number of vehicles that are currently plugged in (hence available for flexibility)
+          required: true
+          example: 12
+        active_vehicles:
+          type: integer
+          minimum: 0
+          description: |-
+            The number of vehicles that are actively being influenced for flexibility usage
+          required: true
+          example: 3
+    flexibility_demand:
+      type: object
+      properties:
+        start_date:
+          type: string
+          format: date-time
+          description: |-
+            UTC normalized start_date, of the values when the demand starts. This does not necessarily have to be for today
+            or tomorrow, but can be for any arbitrary date, as long as it is not in the past.
+          required: true
+          example: "2025-09-02T03:00:00Z"
+        unit:
+          type: string
+          enum:
+            - KW
+          description: |-
+            Defines which unit of measure for the numbers for consumption are in. Note that this defines the numbers
+            for all of the values supplied in `requested_flexibility`. Can offer more options in the future.
+          required: true
+          example: KW
+        interval_unit:
+          type: string
+          enum:
+            - MINUTES
+          description: |-
+            Denotes the unit of time used to calculate the intervals in the request. Can offer more options in the future.
+          required: true
+          example: MINUTES
+        interval_time:
+          type: integer
+          minimum: 1
+          maximum: 60
+          description: |-
+            Defines in combination with the field `interval_unit`, how long a value is valid for. Hence if it is 15
+            and `interval_unit` is `MINUTES`, it is expected that `requested_flexibility` contains 24*60/15 = 96 elements.
+          example: 15
+          required: true
+        requested_flexibility:
+          type: array
+          items:
+            $ref: "#/components/schemas/consumption_interval"
+            minItems: 1
+          required: true
+          description: |-
+            Contains the exact requests of behavioural change in consumption for a given time slot. The first element
+            has (roughly) the same value as `start_date`, but might be rounded up/down to match existing grid data.
+            Each subsequent item is `start_date + i*interval_time`.
+    consumption_interval:
+      type: object
+      properties:
+        interval:
+          type: string
+          format: date-time
+          description: |-
+            The date-time for this entry in the list. Note that the first element should always be the earliest,
+            and that any further elements are to have their `interval` set to the previous `interval + distance`.
+          required: true
+        request:
+          type: number
+          format: double
+          description: |-
+            Defines a numeric amount of energy to be additionally consumed (positive value) or to reduce the consumed
+            amount by the given value (negative value).
+          required: true
+      example: [
+        {
+          interval: "2025-01-01T00:00:00Z",
+          request: 30.34
+        },
+        {
+          interval: "2025-01-01T00:15:00Z",
+          request: 0.884
+        },
+        {
+          interval: "2025-01-01T00:30:00Z",
+          request: -15.6482
+        }
+      ]
+    flexibility_plan:
+      type: object
+      properties:
+        start_date:
+          type: string
+          format: date-time
+          description: |-
+            The start date-time for this update. *It is expected that the given date-time is in UTC!* and not in the past
+          required: true
+          example: "2025-09-02T03:00:00Z"
+        unit:
+          type: string
+          enum:
+            - KW
+          description: |-
+            Defines which unit of measure for the power values.
+          required: true
+          example: KW
+        interval_unit:
+          type: string
+          enum:
+            - MINUTES
+          description: |-
+            Denotes the unit of time used to calculate the intervals.
+          required: true
+          example: MINUTES
+        interval_time:
+          type: integer
+          minimum: 1
+          maximum: 60
+          description: |-
+            Defines in combination with the field `interval_unit`, how long a value is valid for.
+          example: 15
+          required: true
+        request_identifier:
+          type: string
+          format: uuid
+          required: true
+          description: |-
+            Identifies the request this update is responding to.
+        planned_flexibility:
+          type: array
+          items:
+            $ref: "#/components/schemas/flexibility_interval"
+          required: true
+          description: |-
+            Contains the planned power values for each time slot.
+    flexibility_interval:
+      type: object
+      properties:
+        interval:
+          type: string
+          format: date-time
+          description: |-
+            The date-time for this entry in the list. UTC normalized and not in the past.
+          required: true
+        baseline:
+          type: number
+          format: double
+          description: |-
+            The planned power consumption for this interval. This value can be seen as the normal behavior, which
+            corresponds to no flexibility being used, hence has no influence on the grid forecast.
+          required: true
+        min:
+          type: number
+          format: double
+          description: |-
+            The minimum power that can be consumed during this interval. This value symbolizes how much consumption can
+            be decreased, in theory. If the baseline is 30, and the minimum is 10, this means that we can reduce the
+            consumption by 20, but that some cars cannot be stopped from charging. If the value is for example -5, 
+            then that implies that cars will also have their charging reduced, even tho they would like to charge.
+          required: true
+        max:
+          type: number
+          format: double
+          description: |-
+            The maximum power that can be consumed during this interval. This can be seen as additional consumption above
+            the baseline, that can be triggered.
+          required: true
+      example:
+        interval: "2025-01-01T00:00:00Z"
+        baseline: 25.0
+        min: -10.0
+        max: 50.0
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+security:
+  - basicAuth: []
