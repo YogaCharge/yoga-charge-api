@@ -115,8 +115,8 @@ components:
           type: string
           description: |-
             Describes the error at hand. This should be descriptive enough to enable further actions to be taken.
-        required:
-          - message
+      required:
+        - message
     flexibility_usage:
       type: object
       properties:
@@ -152,7 +152,6 @@ components:
           minimum: 0
           description: |-
             The number of vehicles that are currently plugged in (hence available for flexibility)
-          required: true
           example: 12
         active_vehicles:
           type: integer
