@@ -27,14 +27,14 @@ paths:
       operationId: getFlexibilityDemand
       parameters:
         - in: query
-          name: interval
+          name: range
           schema:
             type: integer
             minimum: 15
             maximum: 1440
             description: |-
-              The interval requested for the flexibility demands. The interval starts "now", and goes on for
-              the defined length of the interval, where as the interval is defined in minutes.
+              The time range requested for the flexibility demands. The interval starts "now", and goes on for
+              the defined length of the range in minutes.
       description: |-
         On this endpoint, a Flexibility Provider can retrieve the flexibility demand from the grid, and use it to schedule
         the consumption of his onboarded fleet.
