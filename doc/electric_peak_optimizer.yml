@@ -33,8 +33,8 @@ paths:
             minimum: 15
             maximum: 1440
             description: |-
-              The time range requested for the flexibility demands. The interval starts "now", and goes on for
-              the defined length of the range in minutes.
+              The time range requested for the flexibility demands. The response includes the most recent data point before "now" (if
+              available) plus all data points from "now" through "now + range" minutes.
           required: true
       description: |-
         On this endpoint, a Flexibility Provider can retrieve the flexibility demand from the grid, and use it to schedule
@@ -221,8 +221,8 @@ components:
           type: string
           format: date-time
           description: |-
-            The date-time for this entry in the list. Note that the first element should always be the earliest,
-            and that any further elements are to have their `interval` set to the previous `interval + distance`.
+             The first element may have a timestamp slightly before start_date, representing the currently active interval at the
+             time of the request. Each subsequent item follows at interval_time intervals.
         request:
           type: number
           format: double
